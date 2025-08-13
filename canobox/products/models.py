@@ -71,6 +71,9 @@ class Product(models.Model):
 
     purchase_link = models.URLField(blank=True,null=True) # 구매 페이지 링크
 
+    engravable = models.BooleanField(default=False) # 각인 가능 여부
+    printable = models.BooleanField(default=False) # 인쇄 가능 여부
+
     def thumbnail_tag(self):
         if self.thumbnail:
             return format_html('<img src="{}" style="width:80px;"/>', self.thumbnail.url)
