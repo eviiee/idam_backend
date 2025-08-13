@@ -37,16 +37,7 @@ ALLOWED_HOSTS = []
 # 개발용
 CORS_ALLOWED_ORIGINS = ["http://localhost:3000"]
 
-
-
-
-
-
-
-
-
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -59,6 +50,8 @@ INSTALLED_APPS = [
     'products',
     'users',
     'orders',
+    'partners',
+    'inventory',
     'storages',
 ]
 
