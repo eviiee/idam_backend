@@ -1,7 +1,7 @@
 from django.db import models
 
 
-from .enums import OrderState, PrintType, PrintState, ShipmentType
+from .enums import OrderState, PrintType, PrintState, PurchaseState, PurchaseType, ShipmentType
 
 
 
@@ -13,6 +13,9 @@ class Order(models.Model):
     channel = models.ForeignKey('partners.Channel', on_delete=models.CASCADE, related_name='orders') # 판매처
     buyer = models.ForeignKey('partners.Company', on_delete=models.CASCADE, related_name='purchased_orders') # 거래업체
     shipment = models.ForeignKey('Shipment', on_delete=models.CASCADE, related_name='shipping_orders')
+
+    purchase_type = models.CharField(max_length=20, choices=PurchaseType.choices)
+    purchase_state = models.CharField(max_length=20, choices=PurchaseState.choices)
 
     deadline = models.DateField(blank=True,null=True)
 

@@ -31,3 +31,8 @@ class PurchaseType(models.TextChoices):
     CREDIT = 'credit', '신용거래'
     DEPOSIT = 'deposit', '무통장'
     
+# 결제 상황
+class PurchaseState(models.TextChoices):
+    PENDING = 'pending', '입금 대기'
+    RECEIVABLE = 'receivable', '미수금'
+    PAID = 'paid', '결제완료'
