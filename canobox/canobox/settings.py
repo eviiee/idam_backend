@@ -28,6 +28,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+APPEND_SLASH = True
+
 
 
 
@@ -153,9 +155,17 @@ STORAGES = {
     "default": {
         "BACKEND": "storages.backends.s3.S3Storage",
         "OPTIONS": {
+            'access_key': config('AWS_ACCESS_KEY_ID'),
+            'secret_key': config('AWS_SECRET_ACCESS_KEY'),
+            'bucket_name': config('AWS_STORAGE_BUCKET_NAME')
         },
     },
-    "staticfiles": "storages.backends.s3.S3Storage",
+    "staticfiles": {
+        'BACKEND':"storages.backends.s3boto3.S3Boto3Storage",
+        "OPTIONS": {
+            "bucket_name": config('AWS_STORAGE_BUCKET_NAME'),
+        },
+    }
 }
 AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
