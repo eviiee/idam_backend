@@ -1,4 +1,5 @@
-from django.shortcuts import render
+
+from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.generics import ListAPIView
@@ -22,20 +23,13 @@ class ProductListAdmin(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-
 class PhoneModels(ListAPIView):
 
     serializer_class = PhoneModelSerializer
 
     def get_queryset(self):
-        return PhoneModel.objects.annotate(
-            model_type_order = Case(
-                When(model_type='아이폰', then=Value(0)),
-                When(model_type='갤럭시', then=Value(1)),
-                default=Value(2),
-                output_field=IntegerField()
-            )
-        ).order_by('model_type_order', '-model_name')
+        return PhoneModel.objects.order_by('-model_type', '-model_name')
+    
     
 class PhoneModelsAdmin(APIView):
 

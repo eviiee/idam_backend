@@ -11,7 +11,9 @@ class Order(models.Model):
     ordered_at = models.DateTimeField(auto_now_add=True) # 주문일시
     order_state = models.CharField(max_length=20,choices=OrderState.choices)
     channel = models.ForeignKey('partners.Channel', on_delete=models.CASCADE, related_name='orders') # 판매처
+    seller = models.ForeignKey('partners.Company', on_delete=models.CASCADE, related_name='sales_orders') # 판매자 (이담 / 상플)
     buyer = models.ForeignKey('partners.Company', on_delete=models.CASCADE, related_name='purchased_orders') # 거래업체
+    buyer_name = models.CharField(max_length=20, blank=True) # 거래업체가 없다면 구매자명 (오픈마켓 판매시)
     shipment = models.ForeignKey('Shipment', on_delete=models.CASCADE, related_name='shipping_orders')
 
     purchase_type = models.CharField(max_length=20, choices=PurchaseType.choices, default='신용거래')
