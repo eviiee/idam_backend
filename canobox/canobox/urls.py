@@ -16,12 +16,25 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+    TokenVerifyView,
+)
 
 
-prefix = 'api/v1'
+prefix = 'api/v1/'
 
 urlpatterns = [
-    # path('api/v1/admin', admin.site.urls),
-    path(prefix+'/products/', include('products.urls')),
+
+    # 토큰 발급
+    path(prefix+'auth/token', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    # 토큰 갱신
+    path(prefix+'auth/token/refresh',TokenRefreshView.as_view(), name='token_refresh'),
+    # 토큰 유효성 확인
+    path(prefix+'auth/token/verify',TokenVerifyView.as_view(), name='token_verify'),
+
+    # Product urls
+    path(prefix+'products/', include('products.urls')),
 ]
 

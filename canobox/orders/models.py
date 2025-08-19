@@ -14,8 +14,8 @@ class Order(models.Model):
     buyer = models.ForeignKey('partners.Company', on_delete=models.CASCADE, related_name='purchased_orders') # 거래업체
     shipment = models.ForeignKey('Shipment', on_delete=models.CASCADE, related_name='shipping_orders')
 
-    purchase_type = models.CharField(max_length=20, choices=PurchaseType.choices)
-    purchase_state = models.CharField(max_length=20, choices=PurchaseState.choices)
+    purchase_type = models.CharField(max_length=20, choices=PurchaseType.choices, default='신용거래')
+    purchase_state = models.CharField(max_length=20, choices=PurchaseState.choices, default='입금 대기')
 
     deadline = models.DateField(blank=True,null=True)
 
