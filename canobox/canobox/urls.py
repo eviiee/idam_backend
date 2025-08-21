@@ -30,15 +30,17 @@ prefix = 'api/v1/'
 urlpatterns = [
 
     # 토큰 발급
-    path(prefix+'auth/token', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path(prefix+'auth/token/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     # 토큰 갱신
-    path(prefix+'auth/token/refresh',TokenRefreshView.as_view(), name='token_refresh'),
+    path(prefix+'auth/token/refresh/',TokenRefreshView.as_view(), name='token_refresh'),
     # 토큰 유효성 확인
-    path(prefix+'auth/token/verify',TokenVerifyView.as_view(), name='token_verify'),
+    path(prefix+'auth/token/verify/',TokenVerifyView.as_view(), name='token_verify'),
 
     # Product urls
     path(prefix+'products/', include('products.urls')),
     # Order urls
-    path(prefix+'orders/', include('orders.urls'))
+    path(prefix+'orders/', include('orders.urls')),
+    # Partner urls
+    path(prefix+'partners/', include('partners.urls')),
 ]
 
