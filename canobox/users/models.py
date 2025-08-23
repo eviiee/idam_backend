@@ -9,7 +9,7 @@ class User(AbstractUser):
     
     name = models.CharField(max_length=20)
     is_corporate = models.BooleanField(default=False)
-    corporate = models.ForeignKey('partners.Company', on_delete=models.CASCADE, related_name='members', blank=True, null=True)
+    corporate = models.ForeignKey('partners.Company', on_delete=models.SET_NULL, related_name='members', blank=True, null=True)
 
     def __str__(self):
         return self.name

@@ -10,17 +10,18 @@ class Order(models.Model):
 
     ordered_at = models.DateTimeField(auto_now_add=True) # 주문일시
     order_state = models.CharField(max_length=20,choices=OrderState.choices)
-    channel = models.ForeignKey('partners.Channel', on_delete=models.CASCADE, related_name='orders') # 판매처
-    seller = models.ForeignKey('partners.Company', on_delete=models.CASCADE, related_name='sales_orders') # 판매자 (이담 / 상플)
-    buyer = models.ForeignKey('partners.Company', on_delete=models.CASCADE, related_name='purchased_orders') # 거래업체
+    channel = models.ForeignKey('partners.Channel', on_delete=models.SET_DEFAULT, related_name='orders', default=1) # 판매처
+    seller = models.ForeignKey('partners.Company', on_delete=models.SET_DEFAULT, related_name='sales_orders', default=1) # 판매자 (이담 / 상플)
+    buyer = models.ForeignKey('partners.Company', on_delete=models.SET_DEFAULT, related_name='purchased_orders', default=1) # 거래업체
     buyer_name = models.CharField(max_length=20, blank=True) # 거래업체가 없다면 구매자명 (오픈마켓 판매시)
-    shipment = models.ForeignKey('Shipment', on_delete=models.CASCADE, related_name='shipping_orders')
+    shipment = models.ForeignKey('Shipment', on_delete=models.RESTRICT, related_name='shipping_orders')
 
     purchase_type = models.CharField(max_length=20, choices=PurchaseType.choices, default='신용거래')
     purchase_state = models.CharField(max_length=20, choices=PurchaseState.choices, default='입금 대기')
 
     deadline = models.DateField(blank=True,null=True)
 
+# TODO : 엄청 꼬여있음 PrintInfo랑 PrintItem 손봐야함
 # 인쇄정보
 class PrintInfo(models.Model):
 
@@ -46,7 +47,7 @@ class Shipment(models.Model):
     shipment_type = models.CharField(max_length=10,choices=ShipmentType.choices)
 
     # 발송인 정보
-    shipper = models.ForeignKey('partners.Company',on_delete=models.CASCADE,related_name='shipments')
+    shipper = models.ForeignKey('partners.Company',on_delete=models.SET_DEFAULT,related_name='shipments', default=1)
     shipper_name = models.CharField(max_length=50)
     shipper_contact = models.CharField(max_length=12,blank=True)
     shipper_contact_alt = models.CharField(max_length=12,blank=True)
@@ -65,5 +66,5 @@ class Shipment(models.Model):
 # 송장
 class Invoice(models.Model):
     shipment = models.ForeignKey('Shipment',on_delete=models.CASCADE,related_name='invoices')
-    courier = models.ForeignKey('partners.Courier',on_delete=models.CASCADE)
+    courier = models.ForeignKey('partners.Courier',on_delete=models.RESTRICT)
     invoice_number = models.CharField(max_length=12)

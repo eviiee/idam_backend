@@ -41,9 +41,9 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'products',
+    'partners',
     'users',
     'orders',
-    'partners',
     'inventory',
     'storages',
 ]
@@ -170,9 +170,9 @@ STORAGES = {
         },
     }
 }
-AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
-AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
-AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME')
+# AWS_ACCESS_KEY_ID = config('AWS_ACCESS_KEY_ID')
+# AWS_SECRET_ACCESS_KEY = config('AWS_SECRET_ACCESS_KEY')
+# AWS_STORAGE_BUCKET_NAME = config('AWS_STORAGE_BUCKET_NAME')
 AWS_S3_REGION_NAME = 'ap-northeast-2'  # 서울 리전
 AWS_QUERYSTRING_AUTH = False  # URL에 인증 파라미터 제거(공개용)
 

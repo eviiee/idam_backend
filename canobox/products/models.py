@@ -1,25 +1,40 @@
 from django.db import models
+from django.forms import ValidationError
 from django.utils.html import format_html
 
 # 휴대폰 기종
 class PhoneModel(models.Model):
     MODEL_TYPE_CHOICES = [
-       ('galaxy', "갤럭시"),
-        ('iPhone', "아이폰"),
+       ('갤럭시', "갤럭시"),
+        ('아이폰', "아이폰"),
     ]
 
     model_type = models.CharField(max_length=10, choices=MODEL_TYPE_CHOICES)
     model_name = models.CharField(max_length=50) # 예: S25 Ultra, S25, 플립7 등
-    model_number = models.CharField(max_length=10, blank=True, null=True, unique=True) # 예: G938, F977 등
+    model_number = models.CharField(max_length=10, blank=True) # 예: G938, F977 등
+
+    order = models.PositiveSmallIntegerField()
 
     class Meta:
         unique_together = ('model_type', 'model_name')
-        ordering = ['model_type', 'model_name']
+        ordering = ['model_type', 'order']
+        constraints = [
+            models.UniqueConstraint(
+                fields=["model_number"],
+                condition=~models.Q(model_number=""),
+                name="unique_code_when_not_blank",
+            )
+        ]
+
+    # def clean(self):
+    #     super().clean()
+    #     if self.code != "" and PhoneModel.objects.filter(code=self.code).exclude(pk=self.pk).exists():
+    #         raise ValidationError({"code":"이미 존재하는 모델 번호입니다"})
 
     def __str__(self):
         return f"{self.model_type} {self.model_name}{f' ({self.model_number})' if self.model_number else ''}"
     
-    # 모델번호는 대문자로 고정하도록 save 함수 오버라이드
+    # 모델번호는 대문자로 고정
     def save(self, *args, **kwargs):
         if self.model_number:
             self.model_number = self.model_number.upper()
@@ -30,7 +45,7 @@ class PhoneModel(models.Model):
 class ProductImages(models.Model):
     product = models.ForeignKey('Product', related_name='additional_images', on_delete=models.CASCADE)
     order = models.PositiveSmallIntegerField()
-    image = models.ImageField(upload_to='product/thumbnails/')
+    image = models.ImageField(upload_to='media/product/thumbnails/')
 
     class Meta:
         ordering = ['order']
@@ -48,19 +63,16 @@ class Product(models.Model):
     use_phone_models = models.BooleanField(default=False) # 휴대폰 모델 옵션 사용여부
 
     # 옵션1 명칭
-    # 휴대폰 모델 사용시 "기종"으로 고정
-    # 휴대폰 모델 미사용, 색상 사용시 "색상"으로 고정
     option1 = models.CharField(max_length=50, blank=True, null=True)
 
     # 옵션2 명칭
-    # 휴대폰 모델과 색상 모두 사용시 "색상"으로 고정
     option2 = models.CharField(max_length=50, blank=True, null=True)
 
     # 옵션3 명칭
     option3 = models.CharField(max_length=50, blank=True, null=True)
 
-    thumbnail = models.ImageField(upload_to='products/thumbnails/') # 대표이미지
-    thumbnail_hover = models.ImageField(upload_to='products/thumbnails/', null=True, blank=True) # 마우스 호버시 대표이미지
+    thumbnail = models.ImageField(upload_to='media/products/thumbnails/') # 대표이미지
+    thumbnail_hover = models.ImageField(upload_to='media/products/thumbnails/', null=True, blank=True) # 마우스 호버시 대표이미지
 
     detail_image = models.TextField() # 상세페이지 (에디터로 작성)
 
@@ -91,7 +103,7 @@ class Product(models.Model):
 class ProductOption(models.Model):
 
     product = models.ForeignKey('Product', related_name='options', on_delete=models.CASCADE) # 이 SKU가 종속된 Product
-    phone_model = models.ForeignKey('PhoneModel',blank=True,null=True, on_delete=models.CASCADE) # 휴대폰 기종을 사용하는 Product의 Option일 경우, 해당하는 기종 - 미사용시 null
+    phone_model = models.ForeignKey('ProductPhoneModelOption',blank=True,null=True, on_delete=models.CASCADE) # 휴대폰 기종을 사용하는 Product의 Option일 경우, 해당하는 기종 - 미사용시 null
 
     option1 = models.CharField(max_length=20, blank=True, null=True) # 옵션1 값
     option2 = models.CharField(max_length=20, blank=True, null=True) # 옵션2 값
@@ -141,3 +153,37 @@ class ProductTag(models.Model):
 
     def __str__(self):
         return self.name
+    
+
+# Product 종속 PhoneModel 리스트
+class ProductPhoneModelOption(models.Model):
+    product = models.ForeignKey('Product',on_delete=models.CASCADE,related_name='phone_model_options')
+    compatible_phone_models = models.ManyToManyField(
+        PhoneModel,
+        through='CompatiblePhoneModel',
+        related_name='product_phone_model_options'
+    )
+
+# ProductPhoneModels - PhoneModel 중개 클래스
+class CompatiblePhoneModel(models.Model):
+    product_phone_model_option = models.ForeignKey('ProductPhoneModelOption', on_delete=models.CASCADE)
+    phone_model = models.ForeignKey('PhoneModel',on_delete=models.CASCADE)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['product_phone_model_option', 'phone_model'],
+                name='unique_product_phone_model'
+            )
+        ]
+    
+    def validate_unique(self, exclude = None):
+        super().validate_unique(exclude)
+        product = self.product_phone_model_option.product
+        phone_model = self.phone_model
+        exists = ProductPhoneModelOption.objects.filter(
+            product_phone_model_option__product=product,
+            phone_model=phone_model,
+        ).exclude(product_phone_model_option=self.product_phone_model_option).exists()
+
+        if exists: raise ValidationError("중복 기종입니다")
