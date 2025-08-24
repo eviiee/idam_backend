@@ -80,13 +80,21 @@ class ProductTagSerializer(serializers.ModelSerializer):
         model = ProductTag
         fields = ["id", "name"]
 
+class PhoneModelNestedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PhoneModel
+        fields = ['id', 'model_type', 'model_name', 'model_number']
+
 
 class CompatiblePhoneModelSerializer(serializers.ModelSerializer):
-    phone_model = serializers.PrimaryKeyRelatedField(queryset=PhoneModel.objects.all())
+    # phone_model을 id로만 받음
+    phone_model = serializers.PrimaryKeyRelatedField(
+        queryset=PhoneModel.objects.all()
+    )
 
     class Meta:
         model = CompatiblePhoneModel
-        fields = ["id", "phone_model"]
+        fields = ['phone_model']
 
 
 class ProductPhoneModelOptionSerializer(serializers.ModelSerializer):
@@ -94,17 +102,20 @@ class ProductPhoneModelOptionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductPhoneModelOption
-        fields = ["id", "compatible_phone_models"]
+        fields = ['id', 'product', 'compatible_phone_models']
 
     def create(self, validated_data):
-        compatible_data = validated_data.pop("compatible_phone_models", [])
-        option = ProductPhoneModelOption.objects.create(**validated_data)
-        for comp in compatible_data:
+        comps_data = validated_data.pop('compatible_phone_models', [])
+        product = self.context.get('product')
+        instance = ProductPhoneModelOption.objects.create(**validated_data)
+        
+        for comp_data in comps_data:
+            # comp_data는 이제 {'phone_model': PhoneModel instance} 형태
             CompatiblePhoneModel.objects.create(
-                product_phone_model_option=option,
-                phone_model=comp["phone_model"]
+                phone_model=comp_data['phone_model'],
+                phone_model_option=instance
             )
-        return option
+        return instance
 
 
 class ProductOptionSerializer(serializers.ModelSerializer):
@@ -114,6 +125,7 @@ class ProductOptionSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
+
     tags = ProductTagSerializer(many=True, required=False)
     additional_images = ProductImagesSerializer(many=True, required=False)
     options = ProductOptionSerializer(many=True, required=False)
@@ -132,11 +144,13 @@ class ProductSerializer(serializers.ModelSerializer):
 
         tags_data = validated_data.pop("tags", [])
         images_data = validated_data.pop("additional_images", [])
-        options_data = validated_data.pop("options", [])
         phone_models_data = validated_data.pop("phone_model_options", [])
+        options_data = validated_data.pop("options", [])
 
         with transaction.atomic():
             product = Product.objects.create(**validated_data)
+
+            phone_model_map = {}
 
             # Tags
             for tag in tags_data:
@@ -149,16 +163,24 @@ class ProductSerializer(serializers.ModelSerializer):
 
             # PhoneModelOptions
             for pm_data in phone_models_data:
+                temp_id = pm_data.pop("temp_id", None)
                 compatible_data = pm_data.pop("compatible_phone_models", [])
                 pm_option = ProductPhoneModelOption.objects.create(product=product, **pm_data)
+                phone_model_map[temp_id] = pm_option
+
                 for comp in compatible_data:
                     CompatiblePhoneModel.objects.create(
-                        product_phone_model_option=pm_option,
+                        phone_model_option=pm_option,
                         phone_model=comp["phone_model"]
                     )
 
+            print(phone_model_map)
+
             # Options
             for opt in options_data:
+                phone_model_temp_id = opt.pop("phone_model_temp", None)
+                if phone_model_temp_id:
+                    opt["phone_model"] = phone_model_map.get(phone_model_temp_id)
                 ProductOption.objects.create(product=product, **opt)
 
         return product
@@ -194,7 +216,7 @@ class ProductSerializer(serializers.ModelSerializer):
                     pm_option = ProductPhoneModelOption.objects.create(product=instance, **pm_data)
                     for comp in compatible_data:
                         CompatiblePhoneModel.objects.create(
-                            product_phone_model_option=pm_option,
+                            phone_model_option=pm_option,
                             phone_model=comp["phone_model"]
                         )
 

@@ -1,4 +1,5 @@
 
+import json
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -10,6 +11,8 @@ from .models import PhoneModel, Product, ProductImages, ProductOption, ProductTa
 from .serializers import ProductSerializer, PhoneModelSerializer, PhoneModelSerializerAdmin
 from rest_framework.viewsets import ModelViewSet
 from django.db import transaction
+
+from djangorestframework_camel_case.util import underscoreize
 
 # Create your views here.
 class ProductListAdmin(APIView):
@@ -50,10 +53,22 @@ class ProductViewSet(ModelViewSet):
     serializer_class = ProductSerializer
 
     def create(self, request, *args, **kwargs):
-        print("👉 request.data:", request.data)
-        print("👉 request.FILES:", request.FILES)
 
-        serializer = self.get_serializer(data=request.data)
+        # print("👉 request.data:", request.data)
+        # print("👉 request.FILES:", request.FILES)
+
+        data = request.data.get("data")
+        json_data = {}
+        try:
+            json_data = json.loads(data)
+        except json.JSONDecodeError:
+            return Response({"error":"잘못된 데이터입니다"},status=status.HTTP_400_BAD_REQUEST)
+            
+        parsed_data = underscoreize(json_data)
+        parsed_data["thumbnail"] = request.FILES.get("thumbnail")
+        parsed_data["thumbnail_hover"] = request.FILES.get("thumbnail_hover")
+
+        serializer = self.get_serializer(data=parsed_data, context={"request": request})
         if not serializer.is_valid():
             print("❌ serializer errors:", serializer.errors)  # 에러 출력
         serializer.is_valid(raise_exception=True)

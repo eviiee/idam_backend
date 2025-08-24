@@ -157,7 +157,7 @@ class ProductTag(models.Model):
 
 # Product 종속 PhoneModel 리스트
 class ProductPhoneModelOption(models.Model):
-    product = models.ForeignKey('Product',on_delete=models.CASCADE,related_name='phone_model_options')
+    product = models.ForeignKey('Product', on_delete=models.CASCADE, related_name='phone_model_options')
     compatible_phone_models = models.ManyToManyField(
         PhoneModel,
         through='CompatiblePhoneModel',
@@ -166,24 +166,28 @@ class ProductPhoneModelOption(models.Model):
 
 # ProductPhoneModels - PhoneModel 중개 클래스
 class CompatiblePhoneModel(models.Model):
-    product_phone_model_option = models.ForeignKey('ProductPhoneModelOption', on_delete=models.CASCADE)
-    phone_model = models.ForeignKey('PhoneModel',on_delete=models.CASCADE)
+    phone_model_option = models.ForeignKey(
+        ProductPhoneModelOption,
+        related_name="phone_models",
+        on_delete=models.CASCADE
+    )
+    phone_model = models.ForeignKey(PhoneModel, on_delete=models.CASCADE)
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['product_phone_model_option', 'phone_model'],
-                name='unique_product_phone_model'
-            )
-        ]
+    # class Meta:
+    #     constraints = [
+    #         models.UniqueConstraint(
+    #             fields=['product_phone_model_option', 'phone_model'],
+    #             name='unique_product_phone_model'
+    #         )
+    #     ]
     
-    def validate_unique(self, exclude = None):
-        super().validate_unique(exclude)
-        product = self.product_phone_model_option.product
-        phone_model = self.phone_model
-        exists = ProductPhoneModelOption.objects.filter(
-            product_phone_model_option__product=product,
-            phone_model=phone_model,
-        ).exclude(product_phone_model_option=self.product_phone_model_option).exists()
+    # def validate_unique(self, exclude = None):
+    #     super().validate_unique(exclude)
+    #     product = self.product_phone_model_option.product
+    #     phone_model = self.phone_model
+    #     exists = ProductPhoneModelOption.objects.filter(
+    #         product_phone_model_option__product=product,
+    #         phone_model=phone_model,
+    #     ).exclude(product_phone_model_option=self.product_phone_model_option).exists()
 
-        if exists: raise ValidationError("중복 기종입니다")
+    #     if exists: raise ValidationError("중복 기종입니다")
